@@ -35,6 +35,9 @@ module.exports = function (opts) {
       'background',
       'background-image'
     ];
+    var additionalBackgroundProperties = [
+      'background-size', 'background-repeat', 'background-position', 'background-color'
+    ];
 
     // Default stylesheets as objects to parse with css
     var stylesheets = {
@@ -78,8 +81,9 @@ module.exports = function (opts) {
       var hasImage = false;
 
       for (declaration in element.declarations) {
-        if (backgroundProperties.indexOf(element.declarations[declaration].property) > -1) {
-          if (element.declarations[declaration].value.match(regex) !== null) {
+        var isAdditionalProperty = additionalBackgroundProperties.indexOf(element.declarations[declaration].property) > -1;
+        if (backgroundProperties.indexOf(element.declarations[declaration].property) > -1 || isAdditionalProperty) {
+          if (element.declarations[declaration].value.match(regex) !== null || isAdditionalProperty) {
             hasImage = true;
             rule.declarations = [ element.declarations[declaration] ];
             element.declarations.splice(declaration, 1);
