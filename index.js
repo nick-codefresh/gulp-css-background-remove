@@ -17,7 +17,7 @@ module.exports = function (opts) {
     writeImagesFile: true,
     regex: /.*(url\((["|']?.+["|']?)?\))+.*/g
   }, opts);
-  
+
   var imagesContent;
   var throughObj = through.obj(function (file, enc, cb) {
     if (file.isNull()) {
@@ -34,9 +34,6 @@ module.exports = function (opts) {
     var backgroundProperties = [
       'background',
       'background-image'
-    ];
-    var additionalBackgroundProperties = [
-      'background-size', 'background-repeat', 'background-position', 'background-color'
     ];
 
     // Default stylesheets as objects to parse with css
@@ -79,17 +76,30 @@ module.exports = function (opts) {
 
       // Check if it has image content
       var hasImage = false;
+      var shouldBeRemoved = [];
+      var isDeclarationsReset = false;
 
       for (declaration in element.declarations) {
-        var isAdditionalProperty = additionalBackgroundProperties.indexOf(element.declarations[declaration].property) > -1;
-        if (backgroundProperties.indexOf(element.declarations[declaration].property) > -1 || isAdditionalProperty) {
-          if (element.declarations[declaration].value.match(regex) !== null || isAdditionalProperty) {
+        var isBackgroundProp = element.declarations[declaration].property && element.declarations[declaration].property.indexOf('background') === 0;
+
+        if (backgroundProperties.indexOf(element.declarations[declaration].property) > -1 || isBackgroundProp) {
+          if (element.declarations[declaration].value.match(regex) !== null || isBackgroundProp) {
             hasImage = true;
-            rule.declarations = [ element.declarations[declaration] ];
-            element.declarations.splice(declaration, 1);
+            if (!isDeclarationsReset) {
+              rule.declarations = [];
+              isDeclarationsReset = true;
+            }
+
+            rule.declarations.push(element.declarations[declaration]);
+            shouldBeRemoved.push(element.declarations[declaration]);
           }
         }
       }
+
+      shouldBeRemoved.forEach(function(declaration) {
+        var index = element.declarations.indexOf(declaration);
+        element.declarations.splice(index, 1);
+      });
 
       // If it's an image we push the rule to the special set
       if (hasImage) {
@@ -122,7 +132,7 @@ module.exports = function (opts) {
         var imagesFile = new File({
           contents: new Buffer(imagesContent)
         });
-        
+
         callback(
           imagesFile
             .pipe(source(opts.filename))
