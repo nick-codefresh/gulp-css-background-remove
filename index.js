@@ -83,8 +83,11 @@ module.exports = function (opts) {
         var isBackgroundProp = element.declarations[declaration].property && element.declarations[declaration].property.indexOf('background') === 0;
 
         if (backgroundProperties.indexOf(element.declarations[declaration].property) > -1 || isBackgroundProp) {
-          if (element.declarations[declaration].value.match(regex) !== null || isBackgroundProp) {
-            hasImage = true;
+          if (!hasImage) {
+            hasImage = element.declarations[declaration].value.match(regex) !== null;
+          }
+          if (hasImage || isBackgroundProp) {
+
             if (!isDeclarationsReset) {
               rule.declarations = [];
               isDeclarationsReset = true;
@@ -96,13 +99,13 @@ module.exports = function (opts) {
         }
       }
 
-      shouldBeRemoved.forEach(function(declaration) {
-        var index = element.declarations.indexOf(declaration);
-        element.declarations.splice(index, 1);
-      });
-
       // If it's an image we push the rule to the special set
       if (hasImage) {
+        shouldBeRemoved.forEach(function(declaration) {
+          var index = element.declarations.indexOf(declaration);
+          element.declarations.splice(index, 1);
+        });
+
         stylesheets.images.stylesheet.rules.push(rule);
       }
 
